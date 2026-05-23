@@ -158,45 +158,6 @@ export async function registerRoutes(
         });
       }
 
-      // 2. Try the live terminal bridge file (for local interactive use)
-      let bridgeActive = false;
-      const bridgePath = path.join(process.cwd(), "shared", "agent_bridge.json");
-      
-      try {
-        fs.writeFileSync(bridgePath, JSON.stringify({
-          question: message,
-          status: "pending",
-          answer: "",
-          timestamp: new Date().toISOString()
-        }, null, 2));
-        bridgeActive = true;
-      } catch (e) {
-        // Filesystem is read-only (e.g., Vercel) or bridge file is not writable
-        console.warn("Bridge handoff skipped (non-writable filesystem).");
-      }
-
-      if (bridgeActive) {
-        // Poll the bridge file for up to 60 seconds, waiting for Antigravity to write the answer
-        const maxWaitSeconds = 60;
-        for (let i = 0; i < maxWaitSeconds; i++) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          if (fs.existsSync(bridgePath)) {
-            try {
-              const content = fs.readFileSync(bridgePath, "utf-8");
-              const bridgeData = JSON.parse(content);
-              if (bridgeData.status === "answered" && bridgeData.answer) {
-                return res.json({
-                  answer: bridgeData.answer,
-                  source: "antigravity_agent"
-                });
-              }
-            } catch (err) {
-              // Ignore temporary parse errors while file is being written
-            }
-          }
-        }
-      }
 
       // Removed faulty transcript bridge so it properly falls through to Gemini API
       // 3. Fallback to Gemini API if key is provided in environment variables
