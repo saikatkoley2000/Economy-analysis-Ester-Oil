@@ -34,10 +34,8 @@ app.use((req, res, next) => {
 
 const httpServer = createServer(app);
 
-// Initialize routes synchronously or asynchronously
-(async () => {
-  await registerRoutes(httpServer, app);
-})();
+// Initialize routes synchronously
+registerRoutes(httpServer, app);
 
 // Export default app for Vercel
 export default app;

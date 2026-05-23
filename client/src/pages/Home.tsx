@@ -138,13 +138,14 @@ export default function Home() {
         };
         setChatMessages((prev) => [...prev, agentMsg]);
       } else {
-        throw new Error("Chat request failed");
+        const errorData = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorData}`);
       }
     } catch (err: any) {
       console.error(err);
       const errorMsg = {
         id: `agent-err-${Date.now()}`,
-        text: "Sorry, I had trouble connecting. I will return back to you shortly with a detailed answer to your query.",
+        text: `DEBUG ERROR: ${err.message}`,
         sender: "agent" as const,
       };
       setChatMessages((prev) => [...prev, errorMsg]);

@@ -120,10 +120,10 @@ function findAnswerInTranscript(query: string): { answer: string; score: number 
   return null;
 }
 
-export async function registerRoutes(
+export function registerRoutes(
   httpServer: Server,
   app: Express
-): Promise<Server> {
+): Server {
   // GET questions for frontend search/expansion list
   app.get("/api/qa/questions", (_req, res) => {
     try {
@@ -225,7 +225,7 @@ User Question: "${message}"`;
 
     } catch (error: any) {
       console.error("Chat route error:", error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message, stack: error.stack });
     }
   });
 
