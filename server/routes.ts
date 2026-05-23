@@ -160,7 +160,7 @@ export async function registerRoutes(
 
       // 2. Try the live terminal bridge file (for local interactive use)
       let bridgeActive = false;
-      const bridgePath = path.join(__dirname, "..", "shared", "agent_bridge.json");
+      const bridgePath = path.join(process.cwd(), "shared", "agent_bridge.json");
       
       try {
         fs.writeFileSync(bridgePath, JSON.stringify({
@@ -198,6 +198,7 @@ export async function registerRoutes(
         }
       }
 
+      // Removed faulty transcript bridge so it properly falls through to Gemini API
       // 3. Fallback to Gemini API if key is provided in environment variables
       const apiKey = process.env.GEMINI_API_KEY;
       if (apiKey) {
