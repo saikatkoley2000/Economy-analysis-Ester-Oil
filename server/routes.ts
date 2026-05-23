@@ -158,39 +158,98 @@ export async function registerRoutes(
         });
       }
 
-      // 2. Question is not in the listed Q&As -> activate the live terminal bridge file
+      // 2. Try the live terminal bridge file (for local interactive use)
+      let bridgeActive = false;
       const bridgePath = path.join(__dirname, "..", "shared", "agent_bridge.json");
       
-      // Write the pending question
-      fs.writeFileSync(bridgePath, JSON.stringify({
-        question: message,
-        status: "pending",
-        answer: "",
-        timestamp: new Date().toISOString()
-      }, null, 2));
+      try {
+        fs.writeFileSync(bridgePath, JSON.stringify({
+          question: message,
+          status: "pending",
+          answer: "",
+          timestamp: new Date().toISOString()
+        }, null, 2));
+        bridgeActive = true;
+      } catch (e) {
+        // Filesystem is read-only (e.g., Vercel) or bridge file is not writable
+        console.warn("Bridge handoff skipped (non-writable filesystem).");
+      }
 
-      // 3. Poll the bridge file for up to 60 seconds, waiting for Antigravity to write the answer
-      const maxWaitSeconds = 60;
-      for (let i = 0; i < maxWaitSeconds; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (fs.existsSync(bridgePath)) {
-          try {
-            const content = fs.readFileSync(bridgePath, "utf-8");
-            const bridgeData = JSON.parse(content);
-            if (bridgeData.status === "answered" && bridgeData.answer) {
-              return res.json({
-                answer: bridgeData.answer,
-                source: "antigravity_agent"
-              });
+      if (bridgeActive) {
+        // Poll the bridge file for up to 60 seconds, waiting for Antigravity to write the answer
+        const maxWaitSeconds = 60;
+        for (let i = 0; i < maxWaitSeconds; i++) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          if (fs.existsSync(bridgePath)) {
+            try {
+              const content = fs.readFileSync(bridgePath, "utf-8");
+              const bridgeData = JSON.parse(content);
+              if (bridgeData.status === "answered" && bridgeData.answer) {
+                return res.json({
+                  answer: bridgeData.answer,
+                  source: "antigravity_agent"
+                });
+              }
+            } catch (err) {
+              // Ignore temporary parse errors while file is being written
             }
-          } catch (e) {
-            // Ignore temporary parse errors while file is being written
           }
         }
       }
 
-      // 4. Fallback response if it times out
+      // 3. Fallback to Gemini API if key is provided in environment variables
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (apiKey) {
+        try {
+          const prompt = `You are the authoritative "Savita Technical Advisor" for Savita Oil Technologies Limited.
+Savita is the manufacturer of all kinds of Mineral Oil, Natural Ester Oil (branded as bioTRANSOL) and Synthetic Ester Oil (branded as TRANSOLSYNTH).
+Savita is the pioneer who started production and business of both Ester Technologies in India first, making them the absolute best in local engineering and quality.
+
+Never name competitor products (like FR3, Midel, Cargill, Apar, Envirotemp).
+
+Here is the current customer report data:
+- Customer Name: ${data.customerName || "Customer"}
+- Transformer Rating: ${data.transformerRating} MVA
+- Voltage Class: ${data.voltageClass} kV
+- Oil Volume: ${data.oilVolume} Litres
+
+Here is the calculated financial and operational comparison results:
+- Best Value choice: ${comparison.bestValue} (Ester savings: bioTRANSOL: ${comparison.naturalSavings}, TRANSOLSYNTH: ${comparison.syntheticSavings})
+- bioTRANSOL (Natural Ester) Payback: ${comparison.naturalPayback} years, BCR: ${comparison.naturalBenefitCostRatio}
+- TRANSOLSYNTH (Synthetic Ester) Payback: ${comparison.syntheticPayback} years, BCR: ${comparison.syntheticBenefitCostRatio}
+
+Answer the user's question with professional authority. Be concise, pitch Ester technology (bioTRANSOL/TRANSOLSYNTH) convincingly showing CapEx offsets on fire protection, paper life extension, and lifecycle TCO savings. Always use the branded names bioTRANSOL and TRANSOLSYNTH.
+
+User Question: "${message}"`;
+
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+              })
+            }
+          );
+
+          if (response.ok) {
+            const resJson: any = await response.json();
+            const generatedText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (generatedText) {
+              return res.json({
+                answer: generatedText.trim(),
+                source: "gemini_api"
+              });
+            }
+          }
+        } catch (apiErr) {
+          console.error("Gemini API call failed:", apiErr);
+        }
+      }
+
+      // 4. Default offline fallback response
       const fallbackAnswer = getExpertFallback(message, data, comparison, selectedOil);
       return res.json({
         answer: fallbackAnswer,
