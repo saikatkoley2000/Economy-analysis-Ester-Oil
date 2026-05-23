@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import type { Server } from 'node:http';
 import { storage } from "./storage";
-import { knowledgeBase, matchQuestion, interpolateAnswer, getExpertFallback } from "@shared/knowledgeBase";
+import { knowledgeBase, matchQuestion, interpolateAnswer, getExpertFallback } from "../shared/knowledgeBase";
 import * as fs from "fs";
 import * as path from "path";
 
