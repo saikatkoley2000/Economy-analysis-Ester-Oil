@@ -98,6 +98,14 @@ User Question: "${message}"`;
                 answer: generatedText.trim(),
                 source: "gemini_api"
               });
+          } else {
+            const errorText = await response.text();
+            console.error("Gemini API returned error status:", response.status, errorText);
+            if (response.status === 403 || response.status === 400 || response.status === 401) {
+              return res.json({
+                answer: `**API ERROR:** The local application tried to use the Gemini API to answer your custom question, but the request was blocked by Google (Status ${response.status}).\n\nError details: ${errorText}\n\n*If your API key was leaked, please generate a new one in Google AI Studio and update your .env file.*`,
+                source: "gemini_api_error"
+              });
             }
           }
         } catch (apiErr) {
@@ -105,7 +113,7 @@ User Question: "${message}"`;
         }
       }
 
-      // 4. Default offline fallback response
+      // 4. Default offline fallback response (Only if API key is missing entirely, or network failure)
       const fallbackAnswer = getExpertFallback(message, data, comparison, selectedOil);
       return res.json({
         answer: fallbackAnswer,
