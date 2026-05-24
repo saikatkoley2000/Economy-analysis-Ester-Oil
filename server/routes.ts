@@ -43,6 +43,7 @@ export function registerRoutes(
 
       // 3. Fallback to Gemini API if key is provided in environment variables
       const apiKey = process.env.GEMINI_API_KEY;
+      console.log("DEBUG API KEY:", apiKey ? "EXISTS" : "MISSING");
       if (apiKey) {
         try {
           const prompt = `You are the authoritative "Savita Technical Advisor" for Savita Oil Technologies Limited.
@@ -70,7 +71,7 @@ User Question: "${message}"`;
           const timeoutId = setTimeout(() => controller.abort(), 30000);
 
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
