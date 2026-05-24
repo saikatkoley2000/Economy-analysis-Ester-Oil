@@ -101,12 +101,12 @@ User Question: "${message}"`;
           } else {
             const errorText = await response.text();
             console.error("Gemini API returned error status:", response.status, errorText);
-            if (response.status === 403 || response.status === 400 || response.status === 401) {
-              return res.json({
-                answer: `**API ERROR:** The local application tried to use the Gemini API to answer your custom question, but the request was blocked by Google (Status ${response.status}).\n\nError details: ${errorText}\n\n*If your API key was leaked, please generate a new one in Google AI Studio and update your .env file.*`,
-                source: "gemini_api_error"
-              });
-            }
+            
+            // Show all API errors in the chat instead of silently falling back
+            return res.json({
+              answer: `**API ERROR:** The local application tried to use the Gemini API, but the request failed (Status ${response.status}).\n\nError details: ${errorText}\n\n*If you see Status 503, Google's servers are currently busy. Please wait a moment and try again.*`,
+              source: "gemini_api_error"
+            });
           }
         } catch (apiErr) {
           console.error("Gemini API call failed:", apiErr);
