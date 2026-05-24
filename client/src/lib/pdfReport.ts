@@ -149,7 +149,7 @@ function addCover(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.setFont("times", "normal");
   doc.setFontSize(18);
   doc.setTextColor("#5F6F86");
-  const subtitle = `Financial Comparison: Savita Mineral Oil vs. bioTRANSOL vs. TRANSOLSYNTH for ${data.transformerRating} MVA, ${data.voltageClass} kV Transformer`;
+  const subtitle = `Financial Comparison: Savita Mineral Oil vs. bioTRANSOL vs. Transol Synth 100 for ${data.projectType === "new_transformer" ? "Brand New" : "Retrofilling"} ${data.transformerRating} MVA, ${data.voltageClass} kV Transformer`;
   doc.text(doc.splitTextToSize(subtitle, 470), page.m, 315);
 
   doc.setDrawColor("#EDF1F5");
@@ -183,7 +183,7 @@ function addCover(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor("#D7E2F0");
-  const brandedBestCover = comp.bestValue === "Natural Ester" ? "bioTRANSOL (Natural Ester)" : comp.bestValue === "Synthetic Ester" ? "TRANSOLSYNTH (Synthetic Ester)" : "Savita Mineral Oil";
+  const brandedBestCover = comp.bestValue === "Natural Ester" ? "bioTRANSOL (Natural Ester)" : comp.bestValue === "Synthetic Ester" ? "Transol Synth 100 (Synthetic Ester)" : "Savita Mineral Oil";
   doc.text(doc.splitTextToSize(`Based on the ${data.analysisYears}-year lifecycle evaluation, the model identifies ${brandedBestCover} as the lowest total life-cycle cost option.`, 170), page.m + 36, 635);
   doc.setFont("times", "bold");
   doc.setFontSize(28);
@@ -195,16 +195,16 @@ function addCover(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
 function addExecutive(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.addPage();
   sectionTitle(doc, "01", "Executive Summary", 80);
-  body(doc, `This report evaluates the financial and operational impact of selecting transformer insulating oil across Savita Mineral Oil, bioTRANSOL (Natural Ester), and TRANSOLSYNTH (Synthetic Ester) alternatives. The analysis uses editable assumptions from the application, including oil volume, transformer cost, service life, annual O&M, insurance, fire protection cost, failure risk, inflation and discount rate. All three oil technologies are manufactured in India by Savita Oil Technologies Limited—the pioneer who started production and business of both Ester technologies in India first.`, page.m, 125, 480);
+  body(doc, `This report evaluates the financial and operational impact of selecting transformer insulating oil across Savita Mineral Oil, bioTRANSOL (Natural Ester), and Transol Synth 100 (Synthetic Ester) alternatives. The analysis uses editable assumptions from the application, including oil volume, transformer cost, service life, annual O&M, insurance, fire protection cost, failure risk, inflation and discount rate. All three oil technologies are manufactured in India by Savita Oil Technologies Limited—the pioneer who started production and business of both Ester technologies in India first.`, page.m, 125, 480);
   const best = bestMetric(comp);
   const brandedBest = comp.bestValue === "Natural Ester" 
     ? "bioTRANSOL (Natural Ester)" 
     : comp.bestValue === "Synthetic Ester" 
-    ? "TRANSOLSYNTH (Synthetic Ester)" 
+    ? "Transol Synth 100 (Synthetic Ester)" 
     : "Savita Mineral Oil";
 
   const savings = comp.bestValue === "Natural Ester" ? comp.naturalSavings : comp.bestValue === "Synthetic Ester" ? comp.syntheticSavings : 0;
-  const brandedBestExec = comp.bestValue === "Natural Ester" ? "bioTRANSOL" : comp.bestValue === "Synthetic Ester" ? "TRANSOLSYNTH" : "Savita Mineral";
+  const brandedBestExec = comp.bestValue === "Natural Ester" ? "bioTRANSOL" : comp.bestValue === "Synthetic Ester" ? "Transol Synth 100" : "Savita Mineral";
   metricCard(doc, "Lowest LCC", brandedBestExec, page.m, 220, 110);
   metricCard(doc, "LCC Savings", money(savings, true), page.m + 125, 220, 110);
   metricCard(doc, "AEC", money(best.annualEquivalentCost, true), page.m + 250, 220, 110);
@@ -229,7 +229,7 @@ function addExecutive(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
 
   label(doc, "Oil Parameter Summary", page.m, 620);
   simpleTable(doc, [
-    ["Parameter", "Savita Mineral Oil", "bioTRANSOL (Natural)", "TRANSOLSYNTH (Synthetic)"],
+    ["Parameter", "Savita Mineral Oil", "bioTRANSOL (Natural)", "Transol Synth 100 (Synthetic)"],
     ["Oil Cost", money(data.moOilCost), money(data.naturalOilCost), money(data.syntheticOilCost)],
     ["Annual O&M", money(data.moAnnualOM), money(data.naturalAnnualOM), money(data.syntheticAnnualOM)],
     ["Insurance / Year", money(data.moInsurancePremium), money(data.naturalInsurancePremium), money(data.syntheticInsurancePremium)],
@@ -243,7 +243,7 @@ function addFinancial(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   sectionTitle(doc, "03", "Financial Analysis & Efficiency Metrics", 80);
   label(doc, "Investment Breakdown", page.m, 142);
   simpleTable(doc, [
-    ["Category", "Savita Mineral Oil", "bioTRANSOL (Natural)", "TRANSOLSYNTH (Synthetic)"],
+    ["Category", "Savita Mineral Oil", "bioTRANSOL (Natural)", "Transol Synth 100 (Synthetic)"],
     ["Oil Fill Cost", money(comp.mineral.oilCost, true), money(comp.natural.oilCost, true), money(comp.synthetic.oilCost, true)],
     ["Fire Protection Capex", money(comp.mineral.fireProtectionCapex, true), money(comp.natural.fireProtectionCapex, true), money(comp.synthetic.fireProtectionCapex, true)],
     ["Initial Investment", money(comp.mineral.initialInvestment, true), money(comp.natural.initialInvestment, true), money(comp.synthetic.initialInvestment, true)],
@@ -295,7 +295,7 @@ function addCostEffectiveness(doc: jsPDF, data: ReportData, comp: ComparisonOutp
   simpleTable(doc, [
     ["Alternative", "TLCC Delta / Savings", "Payback", "AEC"],
     ["bioTRANSOL (Natural)", money(comp.naturalSavings, true), yrs(comp.naturalPayback), money(comp.natural.annualEquivalentCost, true)],
-    ["TRANSOLSYNTH (Synthetic)", money(comp.syntheticSavings, true), yrs(comp.syntheticPayback), money(comp.synthetic.annualEquivalentCost, true)],
+    ["Transol Synth 100 (Synthetic)", money(comp.syntheticSavings, true), yrs(comp.syntheticPayback), money(comp.synthetic.annualEquivalentCost, true)],
     ["Synthetic vs Natural", money(comp.naturalVsSyntheticSavings, true), "N/A", "Relative TLCC difference"],
   ], page.m, 420, [150, 145, 95, 94], { header: true });
 
@@ -315,7 +315,7 @@ function addLcc(doc: jsPDF, comp: ComparisonOutput) {
   sectionTitle(doc, "05", "Life Cycle Cost Analysis", 80);
   label(doc, "LCC Summary Comparison", page.m, 140);
   simpleTable(doc, [
-    ["Cost Component (PV)", "Savita Mineral Oil", "bioTRANSOL (Natural)", "TRANSOLSYNTH (Synthetic)"],
+    ["Cost Component (PV)", "Savita Mineral Oil", "bioTRANSOL (Natural)", "Transol Synth 100 (Synthetic)"],
     ["Initial Investment / Capital Cost", money(comp.mineral.initialInvestment, true), money(comp.natural.initialInvestment, true), money(comp.synthetic.initialInvestment, true)],
     ["Annual O&M Costs (PV)", money(comp.mineral.omPV, true), money(comp.natural.omPV, true), money(comp.synthetic.omPV, true)],
     ["Insurance Costs (PV)", money(comp.mineral.insurancePV, true), money(comp.natural.insurancePV, true), money(comp.synthetic.insurancePV, true)],
@@ -345,7 +345,7 @@ function addLcc(doc: jsPDF, comp: ComparisonOutput) {
   const vals = [comp.mineral.totalLifeCycleCost, comp.natural.totalLifeCycleCost, comp.synthetic.totalLifeCycleCost];
   const max = Math.max(...vals) * 1.08;
   const barW = 70;
-  ["Savita Mineral", "bioTRANSOL", "TRANSOLSYNTH"].forEach((name, i) => {
+  ["Savita Mineral", "bioTRANSOL", "Transol Synth 100"].forEach((name, i) => {
     const h = (vals[i] / max) * (chartH - 28);
     const x = chartX + 50 + i * 125;
     doc.setFillColor(i === 0 ? "#A0642D" : i === 1 ? "#208A67" : "#1E7EA6");
@@ -379,8 +379,8 @@ function addConclusion(doc: jsPDF, comp: ComparisonOutput) {
   doc.setFontSize(17);
   doc.setTextColor(INK);
   doc.text("Final Recommendation", page.m + 35, 330);
-  const brandedBestConclusion = comp.bestValue === "Natural Ester" ? "bioTRANSOL (Natural Ester)" : comp.bestValue === "Synthetic Ester" ? "TRANSOLSYNTH (Synthetic Ester)" : "Savita Mineral Oil";
-  body(doc, `The model recommends ${brandedBestConclusion} based on the lowest total life-cycle cost under the supplied assumptions. Savita Oil Technologies Limited is the pioneer manufacturer of all kinds of Mineral Oil, Natural Ester Oil (bioTRANSOL), and Synthetic Ester Oil (TRANSOLSYNTH) in India, having started production and business of both Ester technologies first in India. Before commercial approval, validate every input against project-specific procurement, engineering, insurance and utility reliability data.`, page.m + 35, 365, 400, 10.5);
+  const brandedBestConclusion = comp.bestValue === "Natural Ester" ? "bioTRANSOL (Natural Ester)" : comp.bestValue === "Synthetic Ester" ? "Transol Synth 100 (Synthetic Ester)" : "Savita Mineral Oil";
+  body(doc, `The model recommends ${brandedBestConclusion} based on the lowest total life-cycle cost under the supplied assumptions. Savita Oil Technologies Limited is the pioneer manufacturer of all kinds of Mineral Oil, Natural Ester Oil (bioTRANSOL), and Synthetic Ester Oil (Transol Synth 100) in India, having started production and business of both Ester technologies first in India. Before commercial approval, validate every input against project-specific procurement, engineering, insurance and utility reliability data.`, page.m + 35, 365, 400, 10.5);
 
   label(doc, "Implementation Roadmap", page.m, 480);
   const steps = [

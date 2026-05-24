@@ -65,7 +65,7 @@ const sections = [
   { id: "project", label: "Project", icon: Factory },
   { id: "mineral", label: "Savita Mineral Oil", icon: Calculator },
   { id: "natural", label: "bioTRANSOL (Natural)", icon: Calculator },
-  { id: "synthetic", label: "TRANSOLSYNTH (Synthetic)", icon: Calculator },
+  { id: "synthetic", label: "Transol Synth 100 (Synthetic)", icon: Calculator },
   { id: "common", label: "Common", icon: Settings },
   { id: "results", label: "Results", icon: LineChart },
   { id: "report", label: "Report", icon: FileText },
@@ -89,7 +89,7 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; text: string; sender: "user" | "agent" }>>([
     {
       id: "welcome",
-      text: "Hello! I am your Savita Oil Technologies Q&A Assistant. Ask me any question about the financial appraisal (LCC, ROI, Payback), safety properties, or operations of bioTRANSOL (Natural Ester) and TRANSOLSYNTH (Synthetic Ester) oils vs Mineral Oil. Savita Oil Technologies Limited is the pioneer manufacturer of all kinds of Mineral Oil, Natural Ester Oil & Synthetic Ester Oil, starting production and business of both Ester technologies in India first.",
+      text: "Hello! I am your Savita Oil Technologies Q&A Assistant. Ask me any question about the financial appraisal (LCC, ROI, Payback), safety properties, or operations of bioTRANSOL (Natural Ester) and Transol Synth 100 (Synthetic Ester) oils vs Mineral Oil. Savita Oil Technologies Limited is the pioneer manufacturer of all kinds of Mineral Oil, Natural Ester Oil & Synthetic Ester Oil, starting production and business of both Ester technologies in India first.",
       sender: "agent",
     },
   ]);
@@ -102,8 +102,10 @@ export default function Home() {
 
   // Automatically scroll to bottom when new messages arrive or loading state changes
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatLoading]);
+    if (active === "qa" && chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [chatMessages, chatLoading, active]);
 
   // Automatically update target oil type context based on best value
   useEffect(() => {
@@ -189,7 +191,7 @@ export default function Home() {
     rows.push(["Failure Cost per Event (INR)", data.failureCost]);
     rows.push([]);
 
-    const headers = ["Metric", "Savita Mineral Oil", "bioTRANSOL (Natural Ester)", "TRANSOLSYNTH (Synthetic Ester)"];
+    const headers = ["Metric", "Savita Mineral Oil", "bioTRANSOL (Natural Ester)", "Transol Synth 100 (Synthetic Ester)"];
     rows.push(headers);
 
     const m = comp.mineral;
@@ -224,7 +226,7 @@ export default function Home() {
 
     rows.push([]);
     rows.push(["Comparison vs Mineral Oil baseline"]);
-    rows.push(["", "bioTRANSOL (Natural Ester)", "TRANSOLSYNTH (Synthetic Ester)"]);
+    rows.push(["", "bioTRANSOL (Natural Ester)", "Transol Synth 100 (Synthetic Ester)"]);
     rows.push(["Savings (INR)", comp.naturalSavings, comp.syntheticSavings]);
     rows.push(["Benefit / Cost Ratio", comp.naturalBenefitCostRatio, comp.syntheticBenefitCostRatio]);
     rows.push(["Investment Multiple", comp.naturalInvestmentMultiple, comp.syntheticInvestmentMultiple]);
@@ -302,7 +304,7 @@ export default function Home() {
           Manufactured by:
           <div className="font-semibold text-sidebar-foreground mt-0.5">Savita Oil Technologies Limited</div>
           <div className="mt-1 text-[9px] leading-tight text-sidebar-foreground/50">
-            Pioneer & India's first manufacturer of bioTRANSOL (Natural Ester) & TRANSOLSYNTH (Synthetic Ester) oils.
+            Pioneer & India's first manufacturer of bioTRANSOL (Natural Ester) & Transol Synth 100 (Synthetic Ester) oils.
           </div>
         </div>
       </aside>
@@ -314,7 +316,7 @@ export default function Home() {
           <div className="flex flex-col min-w-0">
             <h1 className="text-sm font-semibold tracking-tight truncate">Transformer Oil Financial Comparison</h1>
             <p className="text-[11px] text-muted-foreground truncate">
-              Whole-life cost modelling · Savita Mineral Oil vs bioTRANSOL vs TRANSOLSYNTH
+              Whole-life cost modelling · Savita Mineral Oil vs bioTRANSOL vs Transol Synth 100
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -368,7 +370,7 @@ export default function Home() {
                 testId="card-summary-natural"
               />
               <SummaryCard
-                title="TRANSOLSYNTH (Synthetic Ester)"
+                title="Transol Synth 100 (Synthetic Ester)"
                 accent="teal"
                 metric={comp.synthetic}
                 isBest={comp.bestValue === "Synthetic Ester"}
@@ -399,6 +401,27 @@ export default function Home() {
                         className="h-8 text-sm"
                         data-testid="input-customerName"
                       />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Project Type
+                      </Label>
+                      <div className="flex gap-1 h-8 bg-muted/20 p-0.5 rounded-md border">
+                        <button 
+                          type="button"
+                          onClick={() => setData(d => ({ ...d, projectType: "new_transformer" }))} 
+                          className={`flex-1 text-xs font-semibold rounded transition-all duration-200 ${data.projectType === "new_transformer" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:bg-muted/50"}`}
+                        >
+                          New Transformer
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => setData(d => ({ ...d, projectType: "retrofill" }))} 
+                          className={`flex-1 text-xs font-semibold rounded transition-all duration-200 ${data.projectType === "retrofill" ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:bg-muted/50"}`}
+                        >
+                          Retrofill
+                        </button>
+                      </div>
                     </div>
                     <FieldInput
                       id="transformerRating"
@@ -474,7 +497,7 @@ export default function Home() {
 
               <OilCard
                 id="section-synthetic"
-                title="TRANSOLSYNTH (Synthetic Ester)"
+                title="Transol Synth 100 (Synthetic Ester)"
                 accent="border-l-teal-500"
                 fields={[
                   { id: "syntheticOilCost", label: "Oil Cost", value: data.syntheticOilCost, k: "syntheticOilCost", prefix: "₹", suffix: "/L" },
@@ -553,7 +576,7 @@ export default function Home() {
                         <TableHead className="w-[260px]">Metric</TableHead>
                         <TableHead className="text-right">Savita Mineral Oil</TableHead>
                         <TableHead className="text-right">bioTRANSOL (Natural)</TableHead>
-                        <TableHead className="text-right">TRANSOLSYNTH (Synthetic)</TableHead>
+                        <TableHead className="text-right">Transol Synth 100 (Synthetic)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -592,7 +615,7 @@ export default function Home() {
                     </CardContent>
                   </Card>
                   <Card className="border-l-4 border-l-teal-500" data-testid="card-vs-synthetic">
-                    <CardHeader className="py-2"><CardTitle className="text-sm">TRANSOLSYNTH (Synthetic Ester) vs Savita Mineral Oil</CardTitle></CardHeader>
+                    <CardHeader className="py-2"><CardTitle className="text-sm">Transol Synth 100 (Synthetic Ester) vs Savita Mineral Oil</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                       <KV label="Lifetime savings" value={formatINRCompact(comp.syntheticSavings)} testId="kv-syn-savings" />
                       <KV label="Benefit / cost" value={isFinite(comp.syntheticBenefitCostRatio) ? formatNumber(comp.syntheticBenefitCostRatio) : "∞"} testId="kv-syn-bcr" />
@@ -637,7 +660,7 @@ export default function Home() {
                   <div className="grid grid-cols-3 gap-4">
                     <ReportStat label="Best value" value={comp.bestValue} testId="text-report-best" />
                     <ReportStat label="bioTRANSOL savings" value={formatINRCompact(comp.naturalSavings)} testId="text-report-nat-savings" />
-                    <ReportStat label="TRANSOLSYNTH savings" value={formatINRCompact(comp.syntheticSavings)} testId="text-report-syn-savings" />
+                    <ReportStat label="Transol Synth 100 savings" value={formatINRCompact(comp.syntheticSavings)} testId="text-report-syn-savings" />
                   </div>
 
                   <p className="text-xs leading-relaxed text-muted-foreground">

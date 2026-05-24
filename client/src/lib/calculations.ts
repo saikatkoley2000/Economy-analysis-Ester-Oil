@@ -3,6 +3,7 @@
 
 export interface ReportData {
   customerName: string;
+  projectType: "retrofill" | "new_transformer";
   transformerRating: number; // MVA
   voltageClass: string;
   oilVolume: number; // litres
@@ -48,6 +49,7 @@ export interface ReportData {
 
 export const defaultReportData: ReportData = {
   customerName: "ABC Power Corporation Ltd.",
+  projectType: "retrofill",
   transformerRating: 50,
   voltageClass: "132/33",
   oilVolume: 27000,
@@ -164,7 +166,15 @@ export function calculateOilTypeMetrics(
   const { baseTransformerCost, oilVolume, transformerRating, inflationRate, discountRate, analysisYears, failureCost } = data;
 
   const oilCostInitial = oil.oilCostPerLitre * oilVolume;
-  const initialInvestment = baseTransformerCost + oilCostInitial + oil.fireProtectionCapex;
+  
+  let initialInvestment = 0;
+  if (data.projectType === "new_transformer") {
+    initialInvestment = baseTransformerCost + oilCostInitial + oil.fireProtectionCapex;
+  } else {
+    // Retrofill: Transformer already exists. You only pay for the oil exchange.
+    // Fire protection CapEx is already sunk cost (or not needed for ester).
+    initialInvestment = oilCostInitial;
+  }
   const yearsToAnalyze = Math.min(analysisYears, oil.lifeExpectancy);
 
   const totalAnnualOM = oil.annualOM + oil.fireProtectionOM;
@@ -178,7 +188,8 @@ export function calculateOilTypeMetrics(
     failureCostPV += escalatedCost / Math.pow(1 + discountRate / 100, year);
   }
 
-  const salvageValue = initialInvestment * (oil.salvagePercent / 100);
+  const baseAssetValue = data.projectType === "new_transformer" ? initialInvestment : baseTransformerCost + oilCostInitial;
+  const salvageValue = baseAssetValue * (oil.salvagePercent / 100);
   const salvagePV = salvageValue / Math.pow(1 + discountRate / 100, oil.lifeExpectancy);
 
   let replacementPV = 0;
@@ -186,7 +197,8 @@ export function calculateOilTypeMetrics(
 
   if (analysisYears > oil.lifeExpectancy) {
     const replacementYear = oil.lifeExpectancy;
-    const futureReplacementCost = initialInvestment * Math.pow(1 + inflationRate / 100, replacementYear);
+    const fullAssetCost = baseTransformerCost + oilCostInitial + oil.fireProtectionCapex;
+    const futureReplacementCost = fullAssetCost * Math.pow(1 + inflationRate / 100, replacementYear);
     replacementPV = (futureReplacementCost - salvageValue) / Math.pow(1 + discountRate / 100, replacementYear);
 
     const remainingYears = analysisYears - oil.lifeExpectancy;

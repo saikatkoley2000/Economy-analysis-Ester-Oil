@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE */
+/* LIGHT MODE - Corporate Blue/Green/Orange */
 :root {
   --button-outline: rgba(0, 0, 0, 0.1);
   --badge-outline: rgba(0, 0, 0, 0.05);
@@ -18,29 +18,29 @@
   --sidebar: 215 25% 16%;
   --sidebar-foreground: 210 20% 92%;
   --sidebar-border: 215 25% 22%;
-  --sidebar-primary: 178 60% 42%;
+  --sidebar-primary: 221 83% 53%; /* Vibrant Blue */
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 215 25% 22%;
   --sidebar-accent-foreground: 210 20% 96%;
-  --sidebar-ring: 178 60% 42%;
+  --sidebar-ring: 221 83% 53%;
   --popover: 0 0% 100%;
   --popover-foreground: 215 28% 12%;
   --popover-border: 215 20% 88%;
-  --primary: 178 60% 36%;
+  --primary: 221 83% 53%; /* Corporate Blue */
   --primary-foreground: 0 0% 100%;
   --secondary: 215 20% 92%;
   --secondary-foreground: 215 28% 12%;
   --muted: 215 20% 94%;
   --muted-foreground: 215 16% 42%;
-  --accent: 178 50% 92%;
-  --accent-foreground: 178 60% 22%;
+  --accent: 24 95% 53%; /* Vibrant Orange */
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 72% 48%;
   --destructive-foreground: 0 0% 100%;
   --input: 215 20% 84%;
-  --ring: 178 60% 42%;
-  --chart-1: 221 83% 45%;
-  --chart-2: 262 83% 48%;
-  --chart-3: 173 58% 39%;
+  --ring: 221 83% 53%;
+  --chart-1: 221 83% 53%; /* Blue */
+  --chart-2: 142 71% 45%; /* Green */
+  --chart-3: 24 95% 53%; /* Orange */
   --chart-4: 43 74% 49%;
   --chart-5: 27 87% 55%;
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
@@ -116,29 +116,29 @@
   --sidebar: 215 32% 6%;
   --sidebar-foreground: 210 20% 92%;
   --sidebar-border: 215 28% 14%;
-  --sidebar-primary: 178 60% 48%;
+  --sidebar-primary: 221 83% 65%; /* Blue */
   --sidebar-primary-foreground: 215 32% 6%;
   --sidebar-accent: 215 28% 14%;
   --sidebar-accent-foreground: 210 20% 96%;
-  --sidebar-ring: 178 60% 48%;
+  --sidebar-ring: 221 83% 65%;
   --popover: 215 28% 11%;
   --popover-foreground: 210 20% 96%;
   --popover-border: 215 25% 18%;
-  --primary: 178 60% 48%;
+  --primary: 221 83% 65%; /* Corporate Blue */
   --primary-foreground: 215 32% 6%;
   --secondary: 215 25% 16%;
   --secondary-foreground: 210 20% 96%;
   --muted: 215 25% 14%;
   --muted-foreground: 215 15% 65%;
-  --accent: 178 50% 18%;
-  --accent-foreground: 178 60% 80%;
+  --accent: 24 95% 60%; /* Orange */
+  --accent-foreground: 215 32% 6%;
   --destructive: 0 72% 52%;
   --destructive-foreground: 0 0% 100%;
   --input: 215 25% 22%;
-  --ring: 178 60% 48%;
-  --chart-1: 221 83% 65%;
-  --chart-2: 262 83% 68%;
-  --chart-3: 173 58% 55%;
+  --ring: 221 83% 65%;
+  --chart-1: 221 83% 65%; /* Blue */
+  --chart-2: 142 71% 55%; /* Green */
+  --chart-3: 24 95% 60%; /* Orange */
   --chart-4: 43 74% 65%;
   --chart-5: 27 87% 65%;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0);
@@ -199,7 +199,14 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 40%, #ffedd5 100%);
+    background-attachment: fixed;
+  }
+  
+  .dark body {
+    background: linear-gradient(135deg, #0f172a 0%, #020617 40%, #1a1005 100%);
+    background-attachment: fixed;
   }
 }
 
