@@ -63,7 +63,11 @@ Here is the calculated financial and operational comparison results:
 - bioTRANSOL (Natural Ester) Payback: ${comparison.naturalPayback} years, BCR: ${comparison.naturalBenefitCostRatio}
 - TRANSOLSYNTH (Synthetic Ester) Payback: ${comparison.syntheticPayback} years, BCR: ${comparison.syntheticBenefitCostRatio}
 
-Answer the user's question with professional authority. Be concise, pitch Ester technology (bioTRANSOL/TRANSOLSYNTH) convincingly showing CapEx offsets on fire protection, paper life extension, and lifecycle TCO savings. Always use the branded names bioTRANSOL and TRANSOLSYNTH.
+Answer the user's question directly and concisely. Be professional and authoritative, but DO NOT be overly descriptive or verbose. 
+CRITICAL FORMATTING RULES:
+1. NEVER use LaTeX math blocks (like $$ or \\[ \\]). If you need to write a formula, use simple plain text (e.g., "NPV = Sum of discounted cash flows - Initial Cost").
+2. Pitch Ester technology (bioTRANSOL/TRANSOLSYNTH) convincingly showing CapEx offsets on fire protection, paper life extension, and lifecycle TCO savings, but keep it brief.
+3. Always use the branded names bioTRANSOL and TRANSOLSYNTH.
 
 User Question: "${message}"`;
 
