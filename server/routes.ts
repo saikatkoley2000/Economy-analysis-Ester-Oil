@@ -98,6 +98,7 @@ User Question: "${message}"`;
                 answer: generatedText.trim(),
                 source: "gemini_api"
               });
+            }
           } else {
             const errorText = await response.text();
             console.error("Gemini API returned error status:", response.status, errorText);
