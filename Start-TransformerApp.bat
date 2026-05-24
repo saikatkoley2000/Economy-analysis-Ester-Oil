@@ -8,6 +8,12 @@ echo Checking for updates and installing dependencies...
 call npm install
 
 echo.
+echo Stopping any existing server running on port 5000...
+FOR /F "tokens=5" %%T IN ('netstat -a -n -o ^| findstr :5000') DO (
+    TaskKill.exe /F /PID %%T 2>nul
+)
+
+echo.
 echo Launching the application server in a new window...
 start "Transformer Oil Server - DO NOT CLOSE" cmd /k "echo Starting server... && echo Keep this window open while using the app! && npm run dev"
 
