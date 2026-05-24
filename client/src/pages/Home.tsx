@@ -29,7 +29,10 @@ import {
   Search,
   Send,
   MessageCircle,
+  Copy
 } from "lucide-react";
+
+import ReactMarkdown from "react-markdown";
 
 import {
   ReportData,
@@ -695,32 +698,60 @@ export default function Home() {
                     {/* Chat History Area */}
                     <ScrollArea className="flex-1 p-4 overflow-y-auto">
                       <div className="space-y-4">
-                        {chatMessages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`flex gap-2 items-start ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                          >
-                            {msg.sender === "agent" && (
-                              <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs text-emerald-600 dark:text-emerald-400 font-black shrink-0">
-                                S
-                              </div>
-                            )}
+                        {chatMessages.map((msg, index) => {
+                          const isAgent = msg.sender === "agent";
+                          const isUser = msg.sender === "user";
+                          const previousUserMsg = isAgent && index > 0 && chatMessages[index - 1].sender === "user" ? chatMessages[index - 1].text : "N/A";
+
+                          return (
                             <div
-                              className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap shadow-sm border ${
-                                msg.sender === "user"
-                                  ? "chat-bubble-user border-primary/20 rounded-tr-none text-white font-medium"
-                                  : "chat-bubble-agent border-border/50 rounded-tl-none text-foreground font-normal"
-                              }`}
+                              key={msg.id}
+                              className={`flex gap-2 items-start ${isUser ? "justify-end" : "justify-start"} group relative`}
                             >
-                              {msg.text}
-                            </div>
-                            {msg.sender === "user" && (
-                              <div className="w-7 h-7 rounded-full bg-primary/25 border border-primary/35 flex items-center justify-center text-xs text-primary font-bold shrink-0">
-                                U
+                              {isAgent && (
+                                <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs text-emerald-600 dark:text-emerald-400 font-black shrink-0">
+                                  S
+                                </div>
+                              )}
+                              <div
+                                className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed shadow-sm border relative ${
+                                  isUser
+                                    ? "chat-bubble-user border-primary/20 rounded-tr-none text-white font-medium"
+                                    : "chat-bubble-agent border-border/50 rounded-tl-none text-foreground font-normal"
+                                }`}
+                              >
+                                {isUser ? (
+                                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                                ) : (
+                                  <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted/50 max-w-none">
+                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                  </div>
+                                )}
+                                
+                                {isAgent && msg.id !== "welcome" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const cleanAnswer = msg.text.replace(/[*#`]/g, '');
+                                      const textToCopy = `Question:\n${previousUserMsg}\n\nAnswer:\n${cleanAnswer}`;
+                                      navigator.clipboard.writeText(textToCopy);
+                                      // Optional visual feedback could go here
+                                    }}
+                                    className="absolute -right-8 bottom-0 p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Copy Q&A"
+                                  >
+                                    <Copy className="w-4 h-4" />
+                                  </button>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        ))}
+                              {isUser && (
+                                <div className="w-7 h-7 rounded-full bg-primary/25 border border-primary/35 flex items-center justify-center text-xs text-primary font-bold shrink-0">
+                                  U
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                         {chatLoading && (
                           <div className="flex gap-2 items-start justify-start">
                             <div className="w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs text-emerald-600 dark:text-emerald-400 font-black shrink-0">
