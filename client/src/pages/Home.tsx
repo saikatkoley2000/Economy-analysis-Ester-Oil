@@ -47,6 +47,8 @@ import {
 import { Logo } from "@/components/Logo";
 import { FieldInput } from "@/components/FieldInput";
 import { generateReportPdf } from "@/lib/pdfReport";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 import {
   Accordion,
   AccordionContent,
@@ -73,12 +75,59 @@ const sections = [
 ];
 
 export default function Home() {
+  const { toast } = useToast();
   const [data, setData] = useState<ReportData>({ ...defaultReportData });
   const [active, setActive] = useState<string>("project");
 
   const setNum = (key: NumericKey, raw: string) => {
     const v = raw === "" ? 0 : Number(raw);
-    setData((d) => ({ ...d, [key]: Number.isFinite(v) ? v : 0 }));
+    setData((d) => ({ ...d, [key as any]: Number.isFinite(v) ? v : 0 }));
+  };
+
+  const handleToggleOil = (type: "compareMineral" | "compareNatural" | "compareSynthetic") => {
+    const minVal = data.compareMineral !== false;
+    const natVal = data.compareNatural !== false;
+    const synVal = data.compareSynthetic !== false;
+
+    const activeCount = (minVal ? 1 : 0) + (natVal ? 1 : 0) + (synVal ? 1 : 0);
+
+    if (activeCount <= 2 && ((type === "compareMineral" && minVal) || (type === "compareNatural" && natVal) || (type === "compareSynthetic" && synVal))) {
+      toast({
+        title: "Minimum Selection Required",
+        description: "You must compare at least 2 oil types.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setData((d) => ({
+      ...d,
+      [type]: !d[type]
+    }));
+  };
+
+  const LocalMetricRow = ({
+    label,
+    pick,
+    strong,
+    testId,
+  }: {
+    label: string;
+    pick: (x: OilMetrics) => string;
+    m?: any;
+    n?: any;
+    s?: any;
+    strong?: boolean;
+    testId?: string;
+  }) => {
+    return (
+      <TableRow data-testid={testId}>
+        <TableCell className={`text-sm ${strong ? "font-semibold" : ""}`}>{label}</TableCell>
+        {data.compareMineral !== false && <TableCell className={`text-right tabular-nums text-sm ${strong ? "font-semibold" : ""}`}>{pick(comp.mineral)}</TableCell>}
+        {data.compareNatural !== false && <TableCell className={`text-right tabular-nums text-sm ${strong ? "font-semibold" : ""}`}>{pick(comp.natural)}</TableCell>}
+        {data.compareSynthetic !== false && <TableCell className={`text-right tabular-nums text-sm ${strong ? "font-semibold" : ""}`}>{pick(comp.synthetic)}</TableCell>}
+      </TableRow>
+    );
   };
 
   const comp = useMemo(() => performComparison(data), [data]);
@@ -276,7 +325,12 @@ export default function Home() {
           </div>
         </div>
         <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {sections.map((s) => {
+          {sections.filter(s => {
+            if (s.id === "mineral" && data.compareMineral === false) return false;
+            if (s.id === "natural" && data.compareNatural === false) return false;
+            if (s.id === "synthetic" && data.compareSynthetic === false) return false;
+            return true;
+          }).map((s) => {
             const Icon = s.icon;
             const isActive = active === s.id;
             return (
@@ -354,28 +408,41 @@ export default function Home() {
             </div>
 
             {/* Results strip — sticky at top of content */}
-            <section id="section-results-summary" className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <SummaryCard
-                title="Savita Mineral Oil"
-                accent="amber"
-                metric={comp.mineral}
-                isBest={comp.bestValue === "Mineral Oil"}
-                testId="card-summary-mineral"
-              />
-              <SummaryCard
-                title="bioTRANSOL (Natural Ester)"
-                accent="emerald"
-                metric={comp.natural}
-                isBest={comp.bestValue === "Natural Ester"}
-                testId="card-summary-natural"
-              />
-              <SummaryCard
-                title="Transol Synth 100 (Synthetic Ester)"
-                accent="teal"
-                metric={comp.synthetic}
-                isBest={comp.bestValue === "Synthetic Ester"}
-                testId="card-summary-synthetic"
-              />
+            <section 
+              id="section-results-summary" 
+              className={`grid grid-cols-1 gap-3 ${
+                ((data.compareMineral !== false ? 1 : 0) + (data.compareNatural !== false ? 1 : 0) + (data.compareSynthetic !== false ? 1 : 0)) === 2 
+                  ? "md:grid-cols-2" 
+                  : "md:grid-cols-3"
+              }`}
+            >
+              {data.compareMineral !== false && (
+                <SummaryCard
+                  title="Savita Mineral Oil"
+                  accent="amber"
+                  metric={comp.mineral}
+                  isBest={comp.bestValue === "Mineral Oil"}
+                  testId="card-summary-mineral"
+                />
+              )}
+              {data.compareNatural !== false && (
+                <SummaryCard
+                  title="bioTRANSOL (Natural Ester)"
+                  accent="emerald"
+                  metric={comp.natural}
+                  isBest={comp.bestValue === "Natural Ester"}
+                  testId="card-summary-natural"
+                />
+              )}
+              {data.compareSynthetic !== false && (
+                <SummaryCard
+                  title="Transol Synth 100 (Synthetic Ester)"
+                  accent="teal"
+                  metric={comp.synthetic}
+                  isBest={comp.bestValue === "Synthetic Ester"}
+                  testId="card-summary-synthetic"
+                />
+              )}
             </section>
 
             {/* Input panels grid */}
@@ -458,11 +525,69 @@ export default function Home() {
                       hint="Active part + tank (excludes oil & fire protection)"
                     />
                   </div>
+
+                  <Separator className="my-4" />
+
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                      Select Insulating Oils to Compare (Choose 2 or 3)
+                    </Label>
+                    <div className="flex flex-wrap gap-6 pt-1">
+                      <div className="flex items-center space-x-2 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200/50 dark:border-amber-800/30 transition-all duration-200 hover:bg-amber-50 dark:hover:bg-amber-950/30">
+                        <Checkbox
+                          id="compareMineral"
+                          checked={data.compareMineral !== false}
+                          onCheckedChange={() => handleToggleOil("compareMineral")}
+                          disabled={data.compareMineral !== false && (data.compareNatural === false || data.compareSynthetic === false)}
+                          className="border-amber-500 data-[state=checked]:bg-amber-600 data-[state=checked]:text-white"
+                        />
+                        <label
+                          htmlFor="compareMineral"
+                          className="text-xs font-bold text-amber-900 dark:text-amber-100 cursor-pointer select-none"
+                        >
+                          Savita Mineral Oil
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 bg-emerald-50/50 dark:bg-emerald-950/20 px-3 py-2 rounded-lg border border-emerald-200/50 dark:border-emerald-800/30 transition-all duration-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/30">
+                        <Checkbox
+                          id="compareNatural"
+                          checked={data.compareNatural !== false}
+                          onCheckedChange={() => handleToggleOil("compareNatural")}
+                          disabled={data.compareNatural !== false && (data.compareMineral === false || data.compareSynthetic === false)}
+                          className="border-emerald-500 data-[state=checked]:bg-emerald-600 data-[state=checked]:text-white"
+                        />
+                        <label
+                          htmlFor="compareNatural"
+                          className="text-xs font-bold text-emerald-900 dark:text-emerald-100 cursor-pointer select-none"
+                        >
+                          bioTRANSOL (Natural Ester)
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 bg-teal-50/50 dark:bg-teal-950/20 px-3 py-2 rounded-lg border border-teal-200/50 dark:border-teal-800/30 transition-all duration-200 hover:bg-teal-50 dark:hover:bg-teal-950/30">
+                        <Checkbox
+                          id="compareSynthetic"
+                          checked={data.compareSynthetic !== false}
+                          onCheckedChange={() => handleToggleOil("compareSynthetic")}
+                          disabled={data.compareSynthetic !== false && (data.compareMineral === false || data.compareNatural === false)}
+                          className="border-teal-500 data-[state=checked]:bg-teal-600 data-[state=checked]:text-white"
+                        />
+                        <label
+                          htmlFor="compareSynthetic"
+                          className="text-xs font-bold text-teal-900 dark:text-teal-100 cursor-pointer select-none"
+                        >
+                          Transol Synth 100 (Synthetic Ester)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              <OilCard
-                id="section-mineral"
+              {data.compareMineral !== false && (
+                <OilCard
+                  id="section-mineral"
                 title="Savita Mineral Oil"
                 accent="border-l-amber-500"
                 fields={[
@@ -477,9 +602,11 @@ export default function Home() {
                 ]}
                 onChange={setNum}
               />
+              )}
 
-              <OilCard
-                id="section-natural"
+              {data.compareNatural !== false && (
+                <OilCard
+                  id="section-natural"
                 title="bioTRANSOL (Natural Ester)"
                 accent="border-l-emerald-500"
                 fields={[
@@ -494,9 +621,11 @@ export default function Home() {
                 ]}
                 onChange={setNum}
               />
+              )}
 
-              <OilCard
-                id="section-synthetic"
+              {data.compareSynthetic !== false && (
+                <OilCard
+                  id="section-synthetic"
                 title="Transol Synth 100 (Synthetic Ester)"
                 accent="border-l-teal-500"
                 fields={[
@@ -511,6 +640,7 @@ export default function Home() {
                 ]}
                 onChange={setNum}
               />
+              )}
 
               {/* Common assumptions */}
               <Card id="section-common" className="xl:col-span-3 glassmorphic-card hover-glow-primary border-t border-t-primary/10 transition-all-300 shadow-md scroll-mt-6" data-testid="card-common">
@@ -574,29 +704,29 @@ export default function Home() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[260px]">Metric</TableHead>
-                        <TableHead className="text-right">Savita Mineral Oil</TableHead>
-                        <TableHead className="text-right">bioTRANSOL (Natural)</TableHead>
-                        <TableHead className="text-right">Transol Synth 100 (Synthetic)</TableHead>
+                        {data.compareMineral !== false && <TableHead className="text-right">Savita Mineral Oil</TableHead>}
+                        {data.compareNatural !== false && <TableHead className="text-right">bioTRANSOL (Natural)</TableHead>}
+                        {data.compareSynthetic !== false && <TableHead className="text-right">Transol Synth 100 (Synthetic)</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <MetricRow label="Initial Investment" pick={(x) => formatINR(x.initialInvestment)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-initial" />
-                      <MetricRow label="Oil Fill Cost (t=0)" pick={(x) => formatINR(x.oilCost)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-oilcost" />
-                      <MetricRow label="Fire Protection CapEx" pick={(x) => formatINR(x.fireProtectionCapex)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-fp-capex" />
-                      <MetricRow label="Fire Protection O&M (PV)" pick={(x) => formatINR(x.fireProtectionOMPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-fp-om" />
-                      <MetricRow label="O&M PV" pick={(x) => formatINR(x.omPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-om" />
-                      <MetricRow label="Insurance PV" pick={(x) => formatINR(x.insurancePV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-insurance" />
-                      <MetricRow label="Failure Cost PV" pick={(x) => formatINR(x.failureCostPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-failure" />
-                      <MetricRow label="Asset Replacement Cost (PV)" pick={(x) => formatINR(x.replacementPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-replacement" />
-                      <MetricRow label="Salvage PV (credit)" pick={(x) => formatINR(x.salvagePV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-salvage" />
-                      <MetricRow strong label="Total Life Cycle Cost" pick={(x) => formatINR(x.totalLifeCycleCost)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-tlcc" />
-                      <MetricRow label="Annual Equivalent Cost" pick={(x) => formatINR(x.annualEquivalentCost)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-aec" />
-                      <MetricRow label="Cost / Year" pick={(x) => formatINR(x.costPerYear)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-year" />
-                      <MetricRow label="Cost / MVA · Year" pick={(x) => formatINR(x.costPerMVAYear)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-mva-year" />
-                      <MetricRow label="Cost / MWh" pick={(x) => `₹${formatNumber(x.costPerMWh, 2)}`} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-mwh" />
-                      <MetricRow label="Cost / MVA" pick={(x) => formatINR(x.costPerMVA)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-mva" />
-                      <MetricRow label="Life Expectancy" pick={(x) => `${x.lifeExpectancy} yr`} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-life" />
-                      <MetricRow label="Failure Rate" pick={(x) => `${x.failureRate.toFixed(3)}% / yr`} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-failure-rate" />
+                      <LocalMetricRow label="Initial Investment" pick={(x) => formatINR(x.initialInvestment)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-initial" />
+                      <LocalMetricRow label="Oil Fill Cost (t=0)" pick={(x) => formatINR(x.oilCost)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-oilcost" />
+                      <LocalMetricRow label="Fire Protection CapEx" pick={(x) => formatINR(x.fireProtectionCapex)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-fp-capex" />
+                      <LocalMetricRow label="Fire Protection O&M (PV)" pick={(x) => formatINR(x.fireProtectionOMPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-fp-om" />
+                      <LocalMetricRow label="O&M PV" pick={(x) => formatINR(x.omPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-om" />
+                      <LocalMetricRow label="Insurance PV" pick={(x) => formatINR(x.insurancePV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-insurance" />
+                      <LocalMetricRow label="Failure Cost PV" pick={(x) => formatINR(x.failureCostPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-failure" />
+                      <LocalMetricRow label="Asset Replacement Cost (PV)" pick={(x) => formatINR(x.replacementPV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-replacement" />
+                      <LocalMetricRow label="Salvage PV (credit)" pick={(x) => formatINR(x.salvagePV)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-salvage" />
+                      <LocalMetricRow strong label="Total Life Cycle Cost" pick={(x) => formatINR(x.totalLifeCycleCost)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-tlcc" />
+                      <LocalMetricRow label="Annual Equivalent Cost" pick={(x) => formatINR(x.annualEquivalentCost)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-aec" />
+                      <LocalMetricRow label="Cost / Year" pick={(x) => formatINR(x.costPerYear)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-year" />
+                      <LocalMetricRow label="Cost / MVA · Year" pick={(x) => formatINR(x.costPerMVAYear)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-mva-year" />
+                      <LocalMetricRow label="Cost / MWh" pick={(x) => `₹${formatNumber(x.costPerMWh, 2)}`} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-mwh" />
+                      <LocalMetricRow label="Cost / MVA" pick={(x) => formatINR(x.costPerMVA)} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-cost-mva" />
+                      <LocalMetricRow label="Life Expectancy" pick={(x) => `${x.lifeExpectancy} yr`} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-life" />
+                      <LocalMetricRow label="Failure Rate" pick={(x) => `${x.failureRate.toFixed(3)}% / yr`} m={comp.mineral} n={comp.natural} s={comp.synthetic} testId="row-failure-rate" />
                     </TableBody>
                   </Table>
                 </div>

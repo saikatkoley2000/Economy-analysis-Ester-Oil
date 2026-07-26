@@ -45,6 +45,9 @@ export interface ReportData {
   discountRate: number; // percent
   analysisYears: number; // typically 30
   failureCost: number; // INR per failure event
+  compareMineral?: boolean;
+  compareNatural?: boolean;
+  compareSynthetic?: boolean;
 }
 
 export const defaultReportData: ReportData = {
@@ -90,6 +93,9 @@ export const defaultReportData: ReportData = {
   discountRate: 10,
   analysisYears: 30,
   failureCost: 5000000,
+  compareMineral: true,
+  compareNatural: true,
+  compareSynthetic: true,
 };
 
 // Present value of an escalating annuity:
@@ -285,6 +291,8 @@ export interface ComparisonOutput {
   syntheticSimpleROI: number;
   naturalPayback: number; // years
   syntheticPayback: number;
+  synthVsNatPayback: number;
+  synthVsNatSavings: number;
 }
 
 export function performComparison(data: ReportData): ComparisonOutput {
@@ -334,11 +342,22 @@ export function performComparison(data: ReportData): ComparisonOutput {
   const naturalPayback = naturalExtra > 0 ? naturalExtra / (mineral.annualEquivalentCost - natural.annualEquivalentCost) : 0;
   const syntheticPayback = syntheticExtra > 0 ? syntheticExtra / (mineral.annualEquivalentCost - synthetic.annualEquivalentCost) : 0;
 
-  const tlccs: { name: ComparisonOutput["bestValue"]; v: number }[] = [
-    { name: "Mineral Oil", v: mineral.totalLifeCycleCost },
-    { name: "Natural Ester", v: natural.totalLifeCycleCost },
-    { name: "Synthetic Ester", v: synthetic.totalLifeCycleCost },
-  ];
+  const synthVsNatExtra = synthetic.initialInvestment - natural.initialInvestment;
+  const synthVsNatPayback = synthVsNatExtra > 0 ? synthVsNatExtra / (natural.annualEquivalentCost - synthetic.annualEquivalentCost) : 0;
+
+  const tlccs: { name: ComparisonOutput["bestValue"]; v: number }[] = [];
+  if (data.compareMineral !== false) {
+    tlccs.push({ name: "Mineral Oil", v: mineral.totalLifeCycleCost });
+  }
+  if (data.compareNatural !== false) {
+    tlccs.push({ name: "Natural Ester", v: natural.totalLifeCycleCost });
+  }
+  if (data.compareSynthetic !== false) {
+    tlccs.push({ name: "Synthetic Ester", v: synthetic.totalLifeCycleCost });
+  }
+  if (tlccs.length === 0) {
+    tlccs.push({ name: "Mineral Oil", v: mineral.totalLifeCycleCost });
+  }
   tlccs.sort((a, b) => a.v - b.v);
   const bestValue = tlccs[0].name;
 
@@ -363,6 +382,8 @@ export function performComparison(data: ReportData): ComparisonOutput {
     syntheticSimpleROI: synthetic.simpleROI,
     naturalPayback,
     syntheticPayback,
+    synthVsNatPayback,
+    synthVsNatSavings: naturalVsSyntheticSavings,
   };
 }
 

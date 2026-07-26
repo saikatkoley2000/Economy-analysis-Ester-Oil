@@ -427,11 +427,12 @@ export const knowledgeBase: QAItem[] = [
 ];
 
 export function getExpertFallback(query: string, data: any, comp: any, targetOil: "Natural Ester" | "Synthetic Ester" = "Natural Ester"): string {
-  const selectedOilName = targetOil === "Natural Ester" ? "bioTRANSOL (Natural Ester)" : "Transol Synth 100 (Synthetic Ester)";
-  const activeMetrics = targetOil === "Natural Ester" ? comp.natural : comp.synthetic;
-  const savings = targetOil === "Natural Ester" ? comp.naturalSavings : comp.syntheticSavings;
-  const payback = targetOil === "Natural Ester" ? comp.naturalPayback : comp.syntheticPayback;
-  const bcr = targetOil === "Natural Ester" ? comp.naturalBenefitCostRatio : comp.syntheticBenefitCostRatio;
+  const isSynVsNat = data.compareMineral === false;
+  const selectedOilName = isSynVsNat ? "Transol Synth 100 (Synthetic Ester)" : targetOil === "Natural Ester" ? "bioTRANSOL (Natural Ester)" : "Transol Synth 100 (Synthetic Ester)";
+  const activeMetrics = isSynVsNat ? comp.synthetic : targetOil === "Natural Ester" ? comp.natural : comp.synthetic;
+  const savings = isSynVsNat ? comp.synthVsNatSavings : targetOil === "Natural Ester" ? comp.naturalSavings : comp.syntheticSavings;
+  const payback = isSynVsNat ? comp.synthVsNatPayback : targetOil === "Natural Ester" ? comp.naturalPayback : comp.syntheticPayback;
+  const bcr = isSynVsNat ? (activeMetrics.benefitCostRatio) : targetOil === "Natural Ester" ? comp.naturalBenefitCostRatio : comp.syntheticBenefitCostRatio;
   const formattedSavings = formatINRCompact(savings);
 
   const normalizedQuery = query.toLowerCase();

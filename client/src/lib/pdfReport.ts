@@ -96,6 +96,11 @@ function metricCard(doc: jsPDF, labelText: string, value: string, x: number, y: 
 }
 
 function simpleTable(doc: jsPDF, rows: string[][], x: number, y: number, colW: number[], opts: { header?: boolean; darkLast?: boolean; rowHeight?: number } = {}) {
+  const totalW = colW.reduce((a, b) => a + b, 0);
+  if (totalW < 470 && colW.length > 1) {
+    const extra = (470 - totalW) / (colW.length - 1);
+    for(let i=1; i<colW.length; i++) colW[i] += extra;
+  }
   const rowH = opts.rowHeight ?? 34;
   rows.forEach((row, i) => {
     const dark = opts.darkLast && i === rows.length - 1;
@@ -190,6 +195,35 @@ function addCover(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.setTextColor("#F1C879");
   doc.text("RECOMMENDED", page.w - page.m - 36, 634, { align: "right" });
   addFooter(doc, 1);
+}
+
+function drawDynamicTable(doc: jsPDF, data: ReportData, r: any[][], x: number, y: number, bw: number, w: [number, number, number], opts: any) {
+  const sM = data.compareMineral !== false;
+  const sN = data.compareNatural !== false;
+  const sS = data.compareSynthetic !== false;
+  const activeCount = (sM ? 1 : 0) + (sN ? 1 : 0) + (sS ? 1 : 0);
+
+  const rows = r.map(row => {
+      const res = [row[0]];
+      if (sM) res.push(row[1]);
+      if (sN) res.push(row[2]);
+      if (sS) res.push(row[3]);
+      return res;
+    });
+
+  let colW: number[];
+  if (activeCount === 3) {
+    colW = [bw, w[0], w[1], w[2]];
+  } else if (activeCount === 2) {
+    // Distribute remaining width (484 - bw) evenly
+    const remaining = 484 - bw;
+    const splitW = Math.floor(remaining / 2);
+    colW = [bw, splitW, remaining - splitW];
+  } else {
+    colW = [bw, 484 - bw];
+  }
+
+  simpleTable(doc, rows, x, y, colW, opts);
 }
 
 function addExecutive(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
@@ -432,3 +466,10 @@ export function generateReportPdf(data: ReportData, comp: ComparisonOutput) {
   const cleanCustomer = (data.customerName || "customer").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
   doc.save(`economic-analysis-report-${cleanCustomer}.pdf`);
 }
+
+
+
+
+
+
+
