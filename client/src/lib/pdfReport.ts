@@ -88,19 +88,23 @@ function metricCard(doc: jsPDF, labelText: string, value: string, x: number, y: 
   doc.setDrawColor(NAVY);
   doc.setLineWidth(1.4);
   doc.line(x, y, x + w, y);
-  label(doc, labelText, x + 14, y + 28);
+  label(doc, labelText, x + 12, y + 28);
   doc.setFont("times", "bold");
-  doc.setFontSize(16);
+  let fontSize = 16;
+  doc.setFontSize(fontSize);
+  
+  // Dynamically scale down font size to fit inside card padding
+  const maxW = w - 24; // 12pt padding on each side
+  while (doc.getTextWidth(value) > maxW && fontSize > 9) {
+    fontSize -= 0.5;
+    doc.setFontSize(fontSize);
+  }
+  
   doc.setTextColor(NAVY);
-  doc.text(value, x + 14, y + 58);
+  doc.text(value, x + 12, y + 58);
 }
 
 function simpleTable(doc: jsPDF, rows: string[][], x: number, y: number, colW: number[], opts: { header?: boolean; darkLast?: boolean; rowHeight?: number } = {}) {
-  const totalW = colW.reduce((a, b) => a + b, 0);
-  if (totalW < 470 && colW.length > 1) {
-    const extra = (470 - totalW) / (colW.length - 1);
-    for(let i=1; i<colW.length; i++) colW[i] += extra;
-  }
   const rowH = opts.rowHeight ?? 34;
   rows.forEach((row, i) => {
     const dark = opts.darkLast && i === rows.length - 1;
