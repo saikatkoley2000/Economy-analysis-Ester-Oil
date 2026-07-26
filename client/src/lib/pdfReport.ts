@@ -154,7 +154,12 @@ function addCover(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.setFont("times", "normal");
   doc.setFontSize(18);
   doc.setTextColor("#5F6F86");
-  const subtitle = `Financial Comparison: Savita's Transol vs. bioTRANSOL vs. Transol Synth 100 for ${data.projectType === "new_transformer" ? "Brand New" : "Retrofill"} ${data.transformerRating} MVA, ${data.voltageClass} kV Transformer`;
+  const comparedOils: string[] = [];
+  if (data.compareMineral !== false) comparedOils.push("Savita's Transol");
+  if (data.compareNatural !== false) comparedOils.push("bioTRANSOL");
+  if (data.compareSynthetic !== false) comparedOils.push("Transol Synth 100");
+
+  const subtitle = `Financial Comparison: ${comparedOils.join(" vs. ")} for ${data.projectType === "new_transformer" ? "Brand New" : "Retrofill"} ${data.transformerRating} MVA, ${data.voltageClass} kV Transformer`;
   doc.text(doc.splitTextToSize(subtitle, 470), page.m, 315);
 
   doc.setDrawColor("#EDF1F5");
@@ -253,22 +258,24 @@ function addExecutive(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
     ["Oil Volume", `${data.oilVolume.toLocaleString("en-IN")} L`],
     ["Base Transformer Cost", money(data.baseTransformerCost, true)],
   ], page.m, 442, [155, 90]);
-  simpleTable(doc, [
-    ["Mineral Life", `${data.moLifeExpectancy} years`],
-    ["Natural Ester Life", `${data.naturalLifeExpectancy} years`],
-    ["Synthetic Ester Life", `${data.syntheticLifeExpectancy} years`],
-    ["Analysis Period", `${data.analysisYears} years`],
-    ["Discount Rate", pct(data.discountRate, 1)],
-  ], 340, 442, [125, 75]);
+
+  const lifecycleRows: any[][] = [];
+  if (data.compareMineral !== false) lifecycleRows.push(["Mineral Life", `${data.moLifeExpectancy} years`]);
+  if (data.compareNatural !== false) lifecycleRows.push(["Natural Ester Life", `${data.naturalLifeExpectancy} years`]);
+  if (data.compareSynthetic !== false) lifecycleRows.push(["Synthetic Ester Life", `${data.syntheticLifeExpectancy} years`]);
+  lifecycleRows.push(["Analysis Period", `${data.analysisYears} years`]);
+  lifecycleRows.push(["Discount Rate", pct(data.discountRate, 1)]);
+
+  simpleTable(doc, lifecycleRows, 340, 442, [125, 75]);
 
   label(doc, "Oil Parameter Summary", page.m, 620);
-  simpleTable(doc, [
+  drawDynamicTable(doc, data, [
     ["Parameter", "Savita's Transol (Mineral Oil)", "bioTRANSOL (Natural)", "Transol Synth 100 (Synthetic)"],
     ["Oil Cost", money(data.moOilCost), money(data.naturalOilCost), money(data.syntheticOilCost)],
     ["Annual O&M", money(data.moAnnualOM), money(data.naturalAnnualOM), money(data.syntheticAnnualOM)],
     ["Insurance / Year", money(data.moInsurancePremium), money(data.naturalInsurancePremium), money(data.syntheticInsurancePremium)],
     ["Failure Rate", pct(data.moFailureRate, 2), pct(data.naturalFailureRate, 2), pct(data.syntheticFailureRate, 2)],
-  ], page.m, 630, [150, 110, 110, 114], { header: true, rowHeight: 27 });
+  ], page.m, 630, 150, [110, 110, 114], { header: true, rowHeight: 27 });
   addFooter(doc, 2);
 }
 
@@ -276,12 +283,12 @@ function addFinancial(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.addPage();
   sectionTitle(doc, "03", "Financial Analysis & Efficiency Metrics", 80);
   label(doc, "Investment Breakdown", page.m, 142);
-  simpleTable(doc, [
+  drawDynamicTable(doc, data, [
     ["Category", "Savita's Transol (Mineral Oil)", "bioTRANSOL (Natural)", "Transol Synth 100 (Synthetic)"],
     ["Oil Fill Cost", money(comp.mineral.oilCost, true), money(comp.natural.oilCost, true), money(comp.synthetic.oilCost, true)],
     ["Fire Protection Capex", money(comp.mineral.fireProtectionCapex, true), money(comp.natural.fireProtectionCapex, true), money(comp.synthetic.fireProtectionCapex, true)],
     ["Initial Investment", money(comp.mineral.initialInvestment, true), money(comp.natural.initialInvestment, true), money(comp.synthetic.initialInvestment, true)],
-  ], page.m, 170, [160, 108, 108, 108], { header: true, darkLast: true });
+  ], page.m, 170, 160, [108, 108, 108], { header: true, darkLast: true });
 
   label(doc, "Economic Efficiency Metrics", page.m, 350);
   const best = bestMetric(comp);
@@ -325,13 +332,22 @@ function addCostEffectiveness(doc: jsPDF, data: ReportData, comp: ComparisonOutp
     ["Cost per MWh Throughput", money(best.costPerMWh), "Per MWh of energy handled"],
   ], page.m, 170, [220, 120, 144], { header: true });
 
-  label(doc, "Comparison Against Mineral Oil Baseline", page.m, 390);
-  simpleTable(doc, [
-    ["Alternative", "TLCC Delta / Savings", "Payback", "AEC"],
-    ["bioTRANSOL (Natural)", money(comp.naturalSavings, true), yrs(comp.naturalPayback), money(comp.natural.annualEquivalentCost, true)],
-    ["Transol Synth 100 (Synthetic)", money(comp.syntheticSavings, true), yrs(comp.syntheticPayback), money(comp.synthetic.annualEquivalentCost, true)],
-    ["Synthetic vs Natural", money(comp.naturalVsSyntheticSavings, true), "N/A", "Relative TLCC difference"],
-  ], page.m, 420, [150, 145, 95, 94], { header: true });
+  label(doc, data.compareMineral !== false ? "Comparison Against Mineral Oil Baseline" : "Comparison Between Selected Alternatives", page.m, 390);
+  const compRows = [
+    ["Alternative", "TLCC Delta / Savings", "Payback", "AEC"]
+  ];
+
+  if (data.compareNatural !== false && data.compareMineral !== false) {
+    compRows.push(["bioTRANSOL (Natural)", money(comp.naturalSavings, true), yrs(comp.naturalPayback), money(comp.natural.annualEquivalentCost, true)]);
+  }
+  if (data.compareSynthetic !== false && data.compareMineral !== false) {
+    compRows.push(["Transol Synth 100 (Synthetic)", money(comp.syntheticSavings, true), yrs(comp.syntheticPayback), money(comp.synthetic.annualEquivalentCost, true)]);
+  }
+  if (data.compareNatural !== false && data.compareSynthetic !== false) {
+    compRows.push(["Synthetic vs Natural", money(comp.naturalVsSyntheticSavings, true), yrs(comp.synthVsNatPayback), "Relative TLCC difference"]);
+  }
+
+  simpleTable(doc, compRows, page.m, 420, [150, 145, 95, 94], { header: true });
 
   label(doc, "Commercial Sensitivity Flags", page.m, 600);
   simpleTable(doc, [
@@ -344,11 +360,11 @@ function addCostEffectiveness(doc: jsPDF, data: ReportData, comp: ComparisonOutp
   addFooter(doc, 4);
 }
 
-function addLcc(doc: jsPDF, comp: ComparisonOutput) {
+function addLcc(doc: jsPDF, data: ReportData, comp: ComparisonOutput) {
   doc.addPage();
   sectionTitle(doc, "05", "Life Cycle Cost Analysis", 80);
   label(doc, "LCC Summary Comparison", page.m, 140);
-  simpleTable(doc, [
+  drawDynamicTable(doc, data, [
     ["Cost Component (PV)", "Savita's Transol (Mineral Oil)", "bioTRANSOL (Natural)", "Transol Synth 100 (Synthetic)"],
     ["Initial Investment / Capital Cost", money(comp.mineral.initialInvestment, true), money(comp.natural.initialInvestment, true), money(comp.synthetic.initialInvestment, true)],
     ["Annual O&M Costs (PV)", money(comp.mineral.omPV, true), money(comp.natural.omPV, true), money(comp.synthetic.omPV, true)],
@@ -357,7 +373,7 @@ function addLcc(doc: jsPDF, comp: ComparisonOutput) {
     ["Asset Replacement Cost (PV)", money(comp.mineral.replacementPV, true), money(comp.natural.replacementPV, true), money(comp.synthetic.replacementPV, true)],
     ["Salvage Value Credit (PV)", `- ${money(comp.mineral.salvagePV, true)}`, `- ${money(comp.natural.salvagePV, true)}`, `- ${money(comp.synthetic.salvagePV, true)}`],
     ["Total Life Cycle Cost (LCC)", money(comp.mineral.totalLifeCycleCost, true), money(comp.natural.totalLifeCycleCost, true), money(comp.synthetic.totalLifeCycleCost, true)],
-  ], page.m, 168, [170, 105, 105, 104], { header: true, darkLast: true });
+  ], page.m, 168, 170, [105, 105, 104], { header: true, darkLast: true });
 
   const best = bestMetric(comp);
   const worst = Math.max(comp.mineral.totalLifeCycleCost, comp.natural.totalLifeCycleCost, comp.synthetic.totalLifeCycleCost);
@@ -376,13 +392,37 @@ function addLcc(doc: jsPDF, comp: ComparisonOutput) {
   const chartX = page.m + 40, chartY = 650, chartW = 410, chartH = 105;
   doc.setFillColor(PANEL);
   doc.rect(chartX, chartY, chartW, chartH, "F");
-  const vals = [comp.mineral.totalLifeCycleCost, comp.natural.totalLifeCycleCost, comp.synthetic.totalLifeCycleCost];
+
+  const vals: number[] = [];
+  const names: string[] = [];
+  const colors: string[] = [];
+
+  if (data.compareMineral !== false) {
+    vals.push(comp.mineral.totalLifeCycleCost);
+    names.push("Savita's Transol");
+    colors.push("#A0642D");
+  }
+  if (data.compareNatural !== false) {
+    vals.push(comp.natural.totalLifeCycleCost);
+    names.push("bioTRANSOL");
+    colors.push("#208A67");
+  }
+  if (data.compareSynthetic !== false) {
+    vals.push(comp.synthetic.totalLifeCycleCost);
+    names.push("Transol Synth 100");
+    colors.push("#1E7EA6");
+  }
+
   const max = Math.max(...vals) * 1.08;
   const barW = 70;
-  ["Savita's Transol", "bioTRANSOL", "Transol Synth 100"].forEach((name, i) => {
+  
+  names.forEach((name, i) => {
     const h = (vals[i] / max) * (chartH - 28);
-    const x = chartX + 50 + i * 125;
-    doc.setFillColor(i === 0 ? "#A0642D" : i === 1 ? "#208A67" : "#1E7EA6");
+    let x = chartX + 50 + i * 125;
+    if (names.length === 2) {
+      x = chartX + 90 + i * 160;
+    }
+    doc.setFillColor(colors[i]);
     doc.rect(x, chartY + chartH - h - 18, barW, h, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
@@ -460,7 +500,7 @@ export function generateReportPdf(data: ReportData, comp: ComparisonOutput) {
   addExecutive(doc, data, comp);
   addFinancial(doc, data, comp);
   addCostEffectiveness(doc, data, comp);
-  addLcc(doc, comp);
+  addLcc(doc, data, comp);
   addConclusion(doc, comp);
 
   const cleanCustomer = (data.customerName || "customer").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
